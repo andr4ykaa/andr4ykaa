@@ -1,3 +1,4 @@
+
 name: Generate contribution snake
 
 on:
@@ -14,8 +15,37 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Verify token and contribution access
+        shell: bash
+        env:
+          SNAKE_TOKEN: ${{ secrets.SNAKE_TOKEN }}
+        run: |
+          if [ -z "$SNAKE_TOKEN" ]; then
+            echo "::error::SNAKE_TOKEN is missing"
+            exit 1
+          fi
+
+          response=$(curl -fsS \
+            -H "Authorization: Bearer $SNAKE_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"query { viewer { login } user(login: \"andr4ykaa\") { contributionsCollection { contributionCalendar { totalContributions } } } }"}' \
+            https://api.github.com/graphql)
+
+          echo "$response" | jq -e \
+            '.data.viewer.login == "andr4ykaa"' > /dev/null || {
+              echo "::error::Token authentication failed"
+              exit 1
+            }
+
+          count=$(echo "$response" | jq -er \
+            '.data.user.contributionsCollection.contributionCalendar.totalContributions')
+
+          echo "Contributions visible to token: $count"
+
       - name: Generate SVG animations
         uses: Platane/snk/svg-only@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.SNAKE_TOKEN }}
         with:
           github_user_name: andr4ykaa
           github_token: ${{ secrets.SNAKE_TOKEN }}
