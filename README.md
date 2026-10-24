@@ -1,3 +1,8 @@
+### Andrew
+
+Information Security @ MEPhI
+
+Applied cryptography · Software engineering · Machine learning
 
 <picture>
   <source
